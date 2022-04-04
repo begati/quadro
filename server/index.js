@@ -16,7 +16,7 @@ app.post('/fetch', async (req, res) => {
         const data = await getData(req.body.url);
 
         const cover = data.images[0].url;
-        const colors = (await getColors(cover)).map(it => it.hex());
+        const colors = (await getColors(cover)).map(it => ({ hex: it.hex() }));
 
         const tracks = data.tracks.items.reduce(
             (result, it) => ({
