@@ -1,0 +1,30 @@
+.new-project {
+  height: 100%;
+  .wrapper {
+    display: flex;
+    width: 100%;
+    height: 100%;
+    justify-content: center;
+    align-items: center;
+
+    .np-button {
+      font-family: 'Open Sans';
+      background: #2c2e33;
+      border: none;
+      border-radius: 4px;
+      padding: 20px;
+      cursor: pointer;
+      font-size: 24px;
+
+      label {
+        display: inline-block;
+        margin-top: 10px;
+        cursor: pointer;
+      }
+
+      &:hover {
+        background: #373a40;
+      }
+    }
+  }
+}
