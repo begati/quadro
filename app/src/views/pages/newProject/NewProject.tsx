@@ -18,7 +18,7 @@ const NewProject: FC = () => {
   const form = useForm({
     initialValues: { url: '' },
     validate: {
-      url: value => value.indexOf('open.spotify.com/album') === -1 ? 'URL Inválida' : null,
+      url: value => value.indexOf('open.spotify.com/') === -1 ? 'URL Inválida' : null,
     },
   });
 

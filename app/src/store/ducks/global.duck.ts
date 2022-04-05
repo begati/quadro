@@ -1,8 +1,9 @@
 import { createSlice, SliceCaseReducers } from '@reduxjs/toolkit';
-import { Data } from '../../model/data';
+import { AlbumData } from '../../model/albumData';
+import { TrackData } from '../../model/trackData';
 
 export interface GlobalState {
-  data: Data | null;
+  data: AlbumData | TrackData | null;
 }
 
 export const globalSlice = createSlice<GlobalState, SliceCaseReducers<GlobalState>>({
