@@ -1,7 +1,7 @@
 import React, { FC, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../../store';
-import { Grid, Title, Button, Group, ScrollArea, Text, LoadingOverlay } from '@mantine/core';
+import { Grid, Title, Button, Group, ScrollArea, Text, LoadingOverlay, Select, Popover } from '@mantine/core';
 import { useForm } from '@mantine/form';
 import { setData } from '../../../store/ducks/global.duck';
 import { useNavigate } from 'react-router-dom';
@@ -23,6 +23,7 @@ const Dashboard: FC = () => {
   const data = useSelector<RootState, AlbumData | null>(state => state.global.data);
   const form = useForm<AlbumData | TrackData>({ initialValues: {} });
 
+  const [modelOpened, setModelOpened] = useState(false);
   const [genLoading, setGenLoading] = useState(false);
   const [loading, setLoading] = useState(false);
   const [image, setImage] = useState(null);
@@ -47,6 +48,11 @@ const Dashboard: FC = () => {
   const update = async (values: any) => {
     try {
       setLoading(true);
+
+      if (!values) {
+        dispatch(setData(form.values));
+      }
+
       const data = await http.post('/preview', values || form.values).then(r => r.data);
       setImage(data.image);
     } catch (e) {
@@ -61,9 +67,14 @@ const Dashboard: FC = () => {
     setLoading(false);
   };
 
-  const gen = async () => {
+  const toggleModel = () => setModelOpened(p => !p);
+
+  const generate = async () => {
     try {
+      toggleModel();
       setGenLoading(true);
+
+      dispatch(setData(form.values));
 
       const data = await http.post('/generate', form.values).then(r => r.data);
 
@@ -112,7 +123,31 @@ const Dashboard: FC = () => {
       </div>
       <div className="preview">
         <div className="pdf-button">
-          <Button fullWidth={true} onClick={gen}>Gerar PDF</Button>
+          <Group position="right">
+            <Popover
+              opened={modelOpened}
+              onClose={toggleModel}
+              position="bottom"
+              placement="end"
+              title="Modelo do PDF"
+              transition="pop-top-right"
+              mt={0}
+              target={
+                <Button fullWidth={true} onClick={toggleModel} mt={0} size="xs">Gerar PDF</Button>
+              }
+            >
+              <Select
+                data={[
+                  { value: 'A4', label: 'A4 dividido' },
+                  { value: 'A3', label: 'A3' },
+                ]}
+                {...form.getInputProps('model')}
+              />
+              <Group position="right" mt="sm">
+                <Button onClick={generate}>Gerar</Button>
+              </Group>
+            </Popover>
+          </Group>
         </div>
         <div className="wrapper">
           {image && <img src={image} />}

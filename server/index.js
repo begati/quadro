@@ -18,9 +18,15 @@ const { getData } = spotifyUrlInfo(fetch);
 app.use(cors());
 app.use(json());
 
-const WIDTH = 1024;
-const ASPECT_RATIO = 1.41391106;
-const FIT = { fit: [595.28, 841.89] };
+const ASPECT_RATIO_A3 = 1.41391106;
+const ASPECT_RATIO_A4 = 1.41427563;
+
+const WIDTH_IMAGE = 1024;
+const WIDTH_PDF_A4 = 580;
+const WIDTH_PDF_A3 = 841.89;
+
+const FIT_A4 = { fit: [WIDTH_PDF_A4, WIDTH_PDF_A4 * ASPECT_RATIO_A4] };
+const FIT_A3 = { fit: [WIDTH_PDF_A3, WIDTH_PDF_A3 * ASPECT_RATIO_A3] };
 
 Handlebars.registerHelper('year', date => date.split('-')[0]);
 Handlebars.registerHelper('part', (arr, size) => Array.from(Array(size), (_, k) => arr[k]));
@@ -34,8 +40,8 @@ const genImage = content => {
         content,
         puppeteerArgs: {
             defaultViewport: {
-                width: WIDTH,
-                height: parseInt(WIDTH * ASPECT_RATIO),
+                width: WIDTH_IMAGE,
+                height: parseInt(WIDTH_IMAGE * ASPECT_RATIO_A3),
             }
         },
         html,
@@ -87,6 +93,7 @@ const parseAlbum = async data => {
     const templates = getTemplates('album');
 
     return {
+        model: 'A4',
         type: 'album',
         copyrights: getCopyrights(copyrights.text),
         artist: data.artists[0].name,
@@ -106,6 +113,7 @@ const parseTrack = async data => {
     const colors = (await getColors(cover)).map(it => it.hex());
     const templates = getTemplates('track');
     return {
+        model: 'A4',
         type: 'track',
         album_index: data.track_number,
         artist: data.artists[0].name,
@@ -153,27 +161,8 @@ app.post('/preview', async (req, res) => {
 
 app.post('/generate', async (req, res) => {
     const image = await genImage(req.body);
-    const img = await Jimp.read(image);
-
-    const half = img.bitmap.height / 2;
-
-    const heightUp = Math.ceil(half);
-    const heightDown = Math.floor(half);
-
-    const halfUp = await img.clone()
-                            .crop(0, 0, img.bitmap.width, heightUp)
-                            .rotate(90)
-                            .getBufferAsync(Jimp.MIME_PNG);
-
-    const halfDown = await img.clone()
-                            .crop(0, heightUp, img.bitmap.width, heightDown)
-                            .rotate(90)
-                            .getBufferAsync(Jimp.MIME_PNG);
-
-    const doc = new PDFDocument({ margin: 0, size: 'A4' });
 
     const buff = [];
-
     const writter = new stream.Writable();
 
     writter._write = function (chunk, _, done) {
@@ -181,10 +170,34 @@ app.post('/generate', async (req, res) => {
         done();
     };
 
+    const doc = new PDFDocument({ margin: 0, size: req.body.model });
     doc.pipe(writter);
-    doc.image(halfUp, 0, 0, FIT);
-    doc.addPage();
-    doc.image(halfDown, 0, 0, FIT);
+
+    if (req.body.model === 'A4') {
+        const img = await Jimp.read(image);
+
+        const half = img.bitmap.height / 2;
+    
+        const heightUp = Math.ceil(half);
+        const heightDown = Math.floor(half);
+    
+        const halfUp = await img.clone()
+                                .crop(0, 0, img.bitmap.width, heightUp)
+                                .rotate(90)
+                                .getBufferAsync(Jimp.MIME_PNG);
+    
+        const halfDown = await img.clone()
+                                .crop(0, heightUp, img.bitmap.width, heightDown)
+                                .rotate(90)
+                                .getBufferAsync(Jimp.MIME_PNG);
+
+        doc.image(halfUp, 10, 10, FIT_A4);
+        doc.addPage();
+        doc.image(halfDown, 10, 10, FIT_A4);
+    } else {
+        doc.image(image, 0, 0, FIT_A3);
+    }
+    
     doc.end();
 
     const buffer = await new Promise(resolve => writter.on('close', () => resolve(Buffer.concat(buff))));

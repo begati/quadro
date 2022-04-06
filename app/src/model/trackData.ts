@@ -13,4 +13,5 @@ export interface TrackData {
   colors?: string[];
   cover?: string;
   template?: string;
+  model?: string;
 }

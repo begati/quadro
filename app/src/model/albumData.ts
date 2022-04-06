@@ -13,4 +13,5 @@ export interface AlbumData {
   duration?: number;
   templates?: SelectItem[];
   template?: string;
+  model?: string;
 }
