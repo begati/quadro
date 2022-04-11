@@ -138,7 +138,8 @@ const Dashboard: FC = () => {
             >
               <Select
                 data={[
-                  { value: 'A4', label: 'A4 dividido' },
+                  { value: 'A4FullPage', label: 'A4 - Página Única' },
+                  { value: 'A4Split', label: 'A4 - Duas Páginas' },
                   { value: 'A3', label: 'A3' },
                 ]}
                 {...form.getInputProps('model')}

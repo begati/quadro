@@ -170,10 +170,10 @@ app.post('/generate', async (req, res) => {
         done();
     };
 
-    const doc = new PDFDocument({ margin: 0, size: req.body.model });
-    doc.pipe(writter);
-
-    if (req.body.model === 'A4') {
+    
+    if (req.body.model === 'A4Split') {
+        const doc = new PDFDocument({ margin: 0, size: 'A4' });
+        doc.pipe(writter);
         const img = await Jimp.read(image);
 
         const half = img.bitmap.height / 2;
@@ -194,11 +194,20 @@ app.post('/generate', async (req, res) => {
         doc.image(halfUp, 10, 10, FIT_A4);
         doc.addPage();
         doc.image(halfDown, 10, 10, FIT_A4);
+        doc.end();
+    } else if (req.body.model === 'A4FullPage') {
+        const doc = new PDFDocument({ margin: 0, size: 'A4' });
+        doc.pipe(writter);
+        doc.image(image, 10, 10, FIT_A4);
+        doc.end();
     } else {
+        const doc = new PDFDocument({ margin: 0, size: 'A3' });
+        doc.pipe(writter);
         doc.image(image, 0, 0, FIT_A3);
+        doc.end();
     }
     
-    doc.end();
+    
 
     const buffer = await new Promise(resolve => writter.on('close', () => resolve(Buffer.concat(buff))));
 
