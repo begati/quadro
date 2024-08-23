@@ -11,9 +11,12 @@ const Handlebars = require("handlebars");
 const Jimp = require('jimp');
 const PDFDocument = require('pdfkit');
 const stream = require('stream');
+let coverURL;
 
 const app = express();
-const { getData } = spotifyUrlInfo(fetch);
+
+const { getData, getPreview, getTracks, getDetails } =
+  require('spotify-url-info')(fetch)
 
 app.use(cors());
 app.use(json());
@@ -28,7 +31,10 @@ const WIDTH_PDF_A3 = 841.89;
 const FIT_A4 = { fit: [WIDTH_PDF_A4, WIDTH_PDF_A4 * ASPECT_RATIO_A4] };
 const FIT_A3 = { fit: [WIDTH_PDF_A3, WIDTH_PDF_A3 * ASPECT_RATIO_A3] };
 
-Handlebars.registerHelper('year', date => date.split('-')[0]);
+Handlebars.registerHelper('year', function() {
+    return new Date().getFullYear();
+  });
+  
 Handlebars.registerHelper('part', (arr, size) => Array.from(Array(size), (_, k) => arr[k]));
 
 const genImage = content => {
@@ -73,13 +79,13 @@ const getCopyrights = value => {
 };
 
 const parseAlbum = async data => {
-    const cover = data.images[0].url;
+    const cover = coverURL;
     const colors = (await getColors(cover)).map(it => it.hex());
 
-    const tracks = data.tracks.items.reduce(
+    const tracks = data.trackList.reduce(
         (result, it) => ({
-            duration: result.duration + it.duration_ms,
-            items: [...result.items, { index: it.track_number, name: it.name }]
+            duration: result.duration,
+            items: [...result.items, { index: it.title, name: it.title }]
         }),
         {
             items: [],
@@ -89,15 +95,20 @@ const parseAlbum = async data => {
 
     tracks.duration = parseInt(tracks.duration / 1000);
 
-    const copyrights = data.copyrights.find(it => it.type === 'C');
+    //const copyrights = data.copyrights.find(it => it.type === 'C');
+    const copyrights = "Copyrights TODO"
     const templates = getTemplates('album');
+
+    const dict = {
+        name: 'Find The Real'
+      };
 
     return {
         model: 'A4',
         type: 'album',
-        copyrights: getCopyrights(copyrights.text),
-        artist: data.artists[0].name,
-        release: data.release_date,
+        copyrights: "TODO copyrights",
+        artist: data.subtitle,
+        release: data.releaseDate,
         tracks: tracks.items,
         duration: tracks.duration,
         name: data.name,
@@ -132,7 +143,14 @@ const parseTrack = async data => {
 app.post('/fetch', async (req, res) => {
     try {
         const data = await getData(req.body.url);
-        let response;
+
+        const preview = await getPreview(req.body.url).then(preview =>
+            coverURL = preview.image)
+
+        console.log(data);
+
+        //const { getData, getPreview, getTracks, getDetails } 
+
 
         switch (data.type) {
             case 'track':
